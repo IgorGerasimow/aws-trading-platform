@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: region-apps
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://example.com/your-repo.git
+    targetRevision: main
+    path: k8s/regions/{{region}}/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated: { selfHeal: true, prune: true }
+    syncOptions: ["CreateNamespace=true"]

@@ -1,0 +1,19 @@
+nats:
+  image: nats:2.10.14
+  jetstream:
+    enabled: true
+    fileStore:
+      enabled: true
+      pvc:
+        size: 200Gi
+  resources:
+    limits: { cpu: "2000m", memory: "2Gi" }
+    requests: { cpu: "500m", memory: "512Mi" }
+auth:
+  enabled: false   # switch to true and configure mTLS/user creds in prod
+replicaCount: 3
+nodeSelector: { role: nats-jetstream }
+tolerations:
+  - key: "storage"
+    operator: "Exists"
+    effect: "NoSchedule"

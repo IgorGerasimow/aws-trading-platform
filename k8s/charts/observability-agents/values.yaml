@@ -1,0 +1,14 @@
+prometheusAgent:
+  enabled: true
+promtail:
+  enabled: true
+otelCollector:
+  enabled: true
+  traces:
+    tailSampling:
+      errors: true
+      slowThresholdMs: 50
+  exporters:
+    tempo: tempo-hub.example.com:4317
+    mimirRemoteWrite: https://mimir-hub.example.com/api/v1/push
+    loki: https://loki-hub.example.com/loki/api/v1/push

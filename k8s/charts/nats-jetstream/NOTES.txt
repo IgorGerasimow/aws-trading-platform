@@ -1,0 +1,2 @@
+# This chart wraps upstream nats-helm values.
+# In production, enable auth/mTLS and configure accounts/subjects.

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bff.fullname" . }}
+spec:
+  type: {{ .Values.service.type }}
+  selector: { app: {{ include "bff.name" . }} }
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}

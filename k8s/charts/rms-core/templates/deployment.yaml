@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rms-core.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector: { matchLabels: { app: {{ include "rms-core.name" . }} } }
+  template:
+    metadata:
+      labels: { app: {{ include "rms-core.name" . }} }
+    spec:
+      containers:
+        - name: rms-core
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          env:
+            - name: NATS_URL
+              value: "{{ .Values.nats.url }}"
