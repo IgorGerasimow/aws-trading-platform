@@ -14,7 +14,7 @@ It includes:
 - **Per region** (cell): VPC, EKS (core plane), node groups, NLB, NATS JetStream, Aurora Global Database module, Redis (extend as needed).
 - **Cross region**: TGW inter-region peering with managed attachments/route tables, NATS leafnodes (values in Helm), global observability hub optional.
 - **Ingress**: Global Accelerator → NLB → BFF (TCP/HTTP2) backed by Terraform edge module provisioning CloudFront + GA.
-- **Egress**: Direct Connect, VPN, and internet breakout modeled in Terraform with TGW route table integration.
+- **Egress**: DX, VPN, and internet breakout modeled in Terraform with TGW route table integration.
 
 ## Layout
 ```
