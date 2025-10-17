@@ -2,16 +2,36 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "rms-core.fullname" . }}
+  labels:
+    {{- include "rms-core.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  selector: { matchLabels: { app: {{ include "rms-core.name" . }} } }
+  selector:
+    matchLabels:
+      {{- include "rms-core.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels: { app: {{ include "rms-core.name" . }} }
+      labels:
+        {{- include "rms-core.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "rms-core.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: rms-core
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           env:
             - name: NATS_URL
               value: "{{ .Values.nats.url }}"
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.metrics.port }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

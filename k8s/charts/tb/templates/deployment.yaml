@@ -2,18 +2,43 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "tb.fullname" . }}
+  labels:
+    {{- include "tb.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  selector: { matchLabels: { app: {{ include "tb.name" . }} } }
+  selector:
+    matchLabels:
+      {{- include "tb.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels: { app: {{ include "tb.name" . }} }
+      labels:
+        {{- include "tb.selectorLabels" . | nindent 8 }}
     spec:
       hostNetwork: {{ .Values.hostNetwork }}
       serviceAccountName: {{ include "tb.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: tb
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          resources: {{- toYaml .Values.resources | nindent 12 }}
-          env: {{- toYaml .Values.env | nindent 12 }}
-          args: ["--nats={{ .Values.nats.url }}"]
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            {{- toYaml .Values.env | nindent 12 }}
+          args:
+            - "--nats={{ .Values.nats.url }}"

@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "observability-agents.fullname" . }}-otel
+  labels:
+    {{- include "observability-agents.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.otelCollector.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "observability-agents.fullname" . }}-otel
+  template:
+    metadata:
+      labels:
+        app: {{ include "observability-agents.fullname" . }}-otel
+        {{- include "observability-agents.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-otel.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "observability-agents.fullname" . }}-otel
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: otel-collector
+          image: {{ .Values.otelCollector.image.repository }}:{{ .Values.otelCollector.image.tag }}
+          imagePullPolicy: {{ .Values.otelCollector.image.pullPolicy }}
+          args:
+            - "--config=/etc/otel/collector.yaml"
+          ports:
+            - name: otlp-grpc
+              containerPort: 4317
+            - name: otlp-http
+              containerPort: 4318
+          resources:
+            {{- toYaml .Values.otelCollector.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "observability-agents.fullname" . }}-otel
+            items:
+              - key: collector.yaml
+                path: collector.yaml

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rms-core.fullname" . }}
+  labels:
+    {{- include "rms-core.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "rms-core.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: metrics
+      port: {{ .Values.service.port }}
+      targetPort: metrics
+      protocol: TCP

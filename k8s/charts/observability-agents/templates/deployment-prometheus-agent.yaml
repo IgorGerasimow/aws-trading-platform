@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "observability-agents.fullname" . }}-prometheus-agent
+  labels:
+    {{- include "observability-agents.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.prometheusAgent.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "observability-agents.fullname" . }}-prometheus-agent
+  template:
+    metadata:
+      labels:
+        app: {{ include "observability-agents.fullname" . }}-prometheus-agent
+        {{- include "observability-agents.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-prometheus-agent.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "observability-agents.fullname" . }}-prometheus-agent
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: prometheus-agent
+          image: {{ .Values.prometheusAgent.image.repository }}:{{ .Values.prometheusAgent.image.tag }}
+          imagePullPolicy: {{ .Values.prometheusAgent.image.pullPolicy }}
+          args:
+            - "--config.file=/etc/prometheus/prometheus-agent.yaml"
+            - "--enable-feature=agent"
+          resources:
+            {{- toYaml .Values.prometheusAgent.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "observability-agents.fullname" . }}-prometheus-agent
+            items:
+              - key: prometheus-agent.yaml
+                path: prometheus-agent.yaml

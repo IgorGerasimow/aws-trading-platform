@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: observability-agents-config
-data:
-  README: |
-    This chart installs Prometheus Agent, Promtail and OTel Collector with minimal config.

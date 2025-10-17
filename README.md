@@ -11,10 +11,10 @@ It includes:
 > The code is a **starter template**: safe defaults, composable structure, and in-repo docs.
 
 ## High-Level
-- **Per region** (cell): VPC, EKS (core plane), node groups, NLB, NATS JetStream, Aurora (placeholder), Redis (placeholder).
-- **Cross region**: TGW inter-region peering, NATS leafnodes (values in Helm), global observability hub optional.
-- **Ingress**: Global Accelerator → NLB → BFF (TCP/HTTP2). Frontend via CloudFront (placeholder).
-- **Egress**: DX/VPN/Public (placeholders in Terraform with TODOs).
+- **Per region** (cell): VPC, EKS (core plane), node groups, NLB, NATS JetStream, Aurora Global Database module, Redis (extend as needed).
+- **Cross region**: TGW inter-region peering with managed attachments/route tables, NATS leafnodes (values in Helm), global observability hub optional.
+- **Ingress**: Global Accelerator → NLB → BFF (TCP/HTTP2) backed by Terraform edge module provisioning CloudFront + GA.
+- **Egress**: DX, VPN, and internet breakout modeled in Terraform with TGW route table integration.
 
 ## Layout
 ```
@@ -47,4 +47,4 @@ docs/
 4. Bootstrap Argo CD (manifests in `argocd/bootstrap/`), then apply App-of-Apps per region.
 5. Tail dashboards & alerts *(see `docs/OBSERVABILITY.md`)*.
 
-> This is an MVP scaffold: extend modules (Aurora, DX/VPN, CloudFront) and chart values for production.
+> This is an MVP scaffold: extend data services (e.g., Redis), tune chart values, and layer on secrets management for production.

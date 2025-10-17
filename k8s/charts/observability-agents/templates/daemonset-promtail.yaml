@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "observability-agents.fullname" . }}-promtail
+  labels:
+    {{- include "observability-agents.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "observability-agents.fullname" . }}-promtail
+  template:
+    metadata:
+      labels:
+        app: {{ include "observability-agents.fullname" . }}-promtail
+        {{- include "observability-agents.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-promtail.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "observability-agents.fullname" . }}-promtail
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: promtail
+          image: {{ .Values.promtail.image.repository }}:{{ .Values.promtail.image.tag }}
+          imagePullPolicy: {{ .Values.promtail.image.pullPolicy }}
+          args:
+            - "-config.file=/etc/promtail/promtail.yaml"
+          resources:
+            {{- toYaml .Values.promtail.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/promtail
+            - name: varlog
+              mountPath: /var/log
+            - name: pods
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+            - name: positions
+              mountPath: /var/lib/promtail
+      tolerations:
+        {{- toYaml .Values.promtail.tolerations | nindent 8 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "observability-agents.fullname" . }}-promtail
+            items:
+              - key: promtail.yaml
+                path: promtail.yaml
+        - name: varlog
+          hostPath:
+            path: /var/log
+        - name: pods
+          hostPath:
+            path: /var/lib/docker/containers
+        - name: positions
+          emptyDir: {}

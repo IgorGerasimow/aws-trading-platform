@@ -1,6 +1,35 @@
+nameOverride: ""
+fullnameOverride: ""
+
 replicaCount: 3
+
 image:
   repository: ghcr.io/example/rms-core
   tag: v0.1.0
+
+service:
+  port: 9090
+
+metrics:
+  port: 9090
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 512Mi
+  requests:
+    cpu: 150m
+    memory: 256Mi
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+networkPolicy:
+  ingressNamespace: ""
+  egressNamespace: ""
+
 nats:
   url: nats://nats.jetstream.svc.cluster.local:4222
+  port: 4222
