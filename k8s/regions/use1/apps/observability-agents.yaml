@@ -1,17 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: observability-agents-use1
+  name: use1-observability
   namespace: argocd
 spec:
-  project: default
+  project: trading-platform
   source:
-    repoURL: https://example.com/your-repo.git
+    repoURL: https://github.com/example/aws-trading-platform.git
     targetRevision: main
     path: k8s/charts/observability-agents
+    helm:
+      releaseName: observability-agents
   destination:
     server: https://kubernetes.default.svc
     namespace: observability
   syncPolicy:
-    automated: { selfHeal: true, prune: true }
-    syncOptions: ["CreateNamespace=true"]
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

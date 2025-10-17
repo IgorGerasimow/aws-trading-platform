@@ -1,20 +1,49 @@
+nameOverride: ""
+fullnameOverride: ""
+
 replicaCount: 2
+
 image:
   repository: ghcr.io/example/trading-bot
   tag: v0.1.0
+
 resources:
-  limits: { cpu: "1000m", memory: "512Mi" }
-  requests: { cpu: "500m", memory: "256Mi" }
+  limits:
+    cpu: "1000m"
+    memory: "512Mi"
+  requests:
+    cpu: "500m"
+    memory: "256Mi"
+
 env:
   - name: REGION
-    valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+
 nats:
   url: nats://nats.jetstream.svc.cluster.local:4222
+  port: 4222
+
 serviceAccount:
   create: true
-nodeSelector: { role: ul-lat }
+  name: ""
+  annotations: {}
+
+nodeSelector:
+  role: ul-lat
+
 tolerations:
   - key: "storage"
     operator: "Exists"
     effect: "NoSchedule"
+
 hostNetwork: true
+
+service:
+  ports:
+    execution: 9000
+
+networkPolicy:
+  ingressNamespace: ""
+  egressNamespace: ""

@@ -1,17 +1,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: tb-euc1
+  name: euc1-tb
   namespace: argocd
 spec:
-  project: default
+  project: trading-platform
   source:
-    repoURL: https://example.com/your-repo.git
+    repoURL: https://github.com/example/aws-trading-platform.git
     targetRevision: main
     path: k8s/charts/tb
+    helm:
+      releaseName: tb
+      values: |
+        env:
+          - name: REGION
+            value: euc1
   destination:
     server: https://kubernetes.default.svc
-    namespace: trading-bot
+    namespace: trading-tb
   syncPolicy:
-    automated: { selfHeal: true, prune: true }
-    syncOptions: ["CreateNamespace=true"]
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

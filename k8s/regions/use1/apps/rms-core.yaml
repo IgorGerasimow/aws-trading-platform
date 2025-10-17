@@ -1,17 +1,25 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: rms-core-use1
+  name: use1-rms-core
   namespace: argocd
 spec:
-  project: default
+  project: trading-platform
   source:
-    repoURL: https://example.com/your-repo.git
+    repoURL: https://github.com/example/aws-trading-platform.git
     targetRevision: main
     path: k8s/charts/rms-core
+    helm:
+      releaseName: rms-core
+      values: |
+        nats:
+          url: nats://trading-nats.jetstream.svc.cluster.local:4222
   destination:
     server: https://kubernetes.default.svc
-    namespace: rms
+    namespace: trading-rms
   syncPolicy:
-    automated: { selfHeal: true, prune: true }
-    syncOptions: ["CreateNamespace=true"]
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

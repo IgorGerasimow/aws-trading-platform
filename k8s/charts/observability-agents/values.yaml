@@ -1,14 +1,160 @@
+nameOverride: ""
+fullnameOverride: ""
+
+podSecurityContext:
+  runAsNonRoot: true
+  fsGroup: 65534
+
 prometheusAgent:
-  enabled: true
+  replicaCount: 1
+  image:
+    repository: quay.io/prometheus/prometheus
+    tag: v2.49.1
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  serviceAccount:
+    annotations: {}
+  config: |
+    global:
+      scrape_interval: 30s
+      evaluation_interval: 30s
+    scrape_configs:
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - action: keep
+            source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+            action: replace
+            target_label: __scheme__
+            regex: (.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: replace
+            source_labels: [__meta_kubernetes_node_name]
+            target_label: instance
+
 promtail:
-  enabled: true
+  image:
+    repository: grafana/promtail
+    tag: 2.9.2
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 150m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  serviceAccount:
+    annotations: {}
+  tolerations: []
+  config: |
+    server:
+      http_listen_port: 3101
+    positions:
+      filename: /var/lib/promtail/positions.yaml
+    clients:
+      - url: https://loki-hub.example.com/loki/api/v1/push
+    scrape_configs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - action: replace
+            source_labels: [__meta_kubernetes_pod_uid]
+            target_label: __path__
+            replacement: /var/log/pods/*$1/*.log
+
 otelCollector:
-  enabled: true
-  traces:
-    tailSampling:
-      errors: true
-      slowThresholdMs: 50
-  exporters:
-    tempo: tempo-hub.example.com:4317
-    mimirRemoteWrite: https://mimir-hub.example.com/api/v1/push
-    loki: https://loki-hub.example.com/loki/api/v1/push
+  replicaCount: 1
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: 0.93.0
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 250m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  serviceAccount:
+    annotations: {}
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      batch:
+        timeout: 5s
+        send_batch_size: 512
+      tail_sampling:
+        decision_wait: 5s
+        num_traces: 5000
+        policies:
+          - name: errors
+            type: status_code
+            status_code:
+              status_codes: [ERROR]
+          - name: latency
+            type: latency
+            latency:
+              threshold_ms: 50
+    exporters:
+      otlp/metrics:
+        endpoint: tempo-hub.example.com:4317
+        tls:
+          insecure: true
+      otlphttp/logs:
+        endpoint: https://loki-hub.example.com/otlp
+        headers:
+          X-Scope-OrgID: trading
+      prometheusremotewrite:
+        endpoint: https://mimir-hub.example.com/api/v1/push
+        tls:
+          insecure: true
+    service:
+      telemetry:
+        logs:
+          level: info
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [prometheusremotewrite]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/logs]
+        traces:
+          receivers: [otlp]
+          processors: [tail_sampling]
+          exporters: [otlp/metrics]

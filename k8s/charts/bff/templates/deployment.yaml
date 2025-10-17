@@ -2,15 +2,54 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "bff.fullname" . }}
+  labels:
+    {{- include "bff.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  selector: { matchLabels: { app: {{ include "bff.name" . }} } }
+  selector:
+    matchLabels:
+      {{- include "bff.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels: { app: {{ include "bff.name" . }} }
+      labels:
+        {{- include "bff.selectorLabels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ .Values.checksum | default (printf "%s:%s" .Values.image.repository .Values.image.tag) | quote }}
     spec:
+      serviceAccountName: {{ include "bff.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: bff
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
-            - containerPort: {{ .Values.service.port }}
+            - name: http
+              containerPort: {{ .Values.service.port }}
+          env:
+            - name: NATS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.nats.name }}
+                  key: {{ .Values.secrets.nats.key }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

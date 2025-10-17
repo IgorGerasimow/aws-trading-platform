@@ -1,17 +1,29 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: bff-use1
+  name: use1-bff
   namespace: argocd
 spec:
-  project: default
+  project: trading-platform
   source:
-    repoURL: https://example.com/your-repo.git
+    repoURL: https://github.com/example/aws-trading-platform.git
     targetRevision: main
     path: k8s/charts/bff
+    helm:
+      releaseName: bff
+      values: |
+        image:
+          tag: v0.1.2
+        secrets:
+          nats:
+            name: trading-nats
+            key: url
   destination:
     server: https://kubernetes.default.svc
-    namespace: bff
+    namespace: trading-bff
   syncPolicy:
-    automated: { selfHeal: true, prune: true }
-    syncOptions: ["CreateNamespace=true"]
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

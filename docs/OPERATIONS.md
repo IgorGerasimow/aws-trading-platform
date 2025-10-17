@@ -8,6 +8,6 @@
 5. Validate NATS JetStream quorum; deploy TB/RMS/BFF
 
 ## DR Drills
-- AZ failure (node group drains)
-- Regional evacuation (GA failover, NATS leafnode reconvergence)
-- WAN provider flip (DX→VPN/NAT)
+- AZ failure (node group drains) — run `scripts/drills/az-evacuate.sh` to orchestrate cordon/scale-down before chaos events.
+- Regional evacuation (GA failover, NATS leafnode reconvergence) — use `scripts/drills/shift-traffic.sh` to swing Global Accelerator traffic between regions.
+- WAN provider flip (DX→VPN/NAT) — leverage the egress module's DX/VPN route tables and adjust TGW route weights via Terraform.

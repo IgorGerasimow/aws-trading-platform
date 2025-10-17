@@ -5,5 +5,5 @@
 - **Core plane**: EKS runs RMS-Core, BFF, NATS JetStream, observability agents.
 - **Ingress**: Global Accelerator → NLB → BFF. 
 - **Egress (TB only)**: prefer DX > VPN-A > VPN-B > NAT. Specific routes via TGW.
-- **Data plane**: Aurora/Dynamo/Redis (placeholders). S3 for history.
+- **Data plane**: Aurora Global Database module provided; extend with Dynamo/Redis as needed. S3 for history.
 - **Autoscaling**: HPA for apps, Karpenter/CA for nodes, warm pools for TB sessions.

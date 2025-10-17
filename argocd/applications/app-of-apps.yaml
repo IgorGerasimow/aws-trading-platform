@@ -1,17 +1,31 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: ApplicationSet
 metadata:
-  name: region-apps
+  name: trading-platform-regions
   namespace: argocd
 spec:
-  project: default
-  source:
-    repoURL: https://example.com/your-repo.git
-    targetRevision: main
-    path: k8s/regions/{{region}}/apps
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: argocd
-  syncPolicy:
-    automated: { selfHeal: true, prune: true }
-    syncOptions: ["CreateNamespace=true"]
+  generators:
+    - list:
+        elements:
+          - region: euc1
+            cluster: https://kubernetes.default.svc
+          - region: use1
+            cluster: https://kubernetes.default.svc
+  template:
+    metadata:
+      name: trading-{{region}}
+    spec:
+      project: trading-platform
+      source:
+        repoURL: https://github.com/example/aws-trading-platform.git
+        targetRevision: main
+        path: k8s/regions/{{region}}/apps
+      destination:
+        server: {{cluster}}
+        namespace: argocd
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+        syncOptions:
+          - CreateNamespace=true
